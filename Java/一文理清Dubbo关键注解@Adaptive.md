@@ -1,16 +1,17 @@
 # 一文理清Dubbo关键注解@Adaptive
-
+[TOC]
 ## 0.前言
 ### 说明
 本文Dubbo源码版本为2.7.8-release。
   
-理解Dubbo SPI对阅读Dubbo源码很重要，而最关键的类是ExtensionLoader，本文会对与@Adaptive有关的涉及ExtensionLoader部门进行说明，ExtensionLoader类其余部分不会展开。
-阅读此文的前提是对Dubbo SPI有所了解，对Dubbo的ExtensionLoader类有了解。@Adaptive是辅助ExtentionLoader使用的一部分。
+理解Dubbo SPI对阅读Dubbo源码很重要，而最关键的类是ExtensionLoader，本文会对与@Adaptive有关的涉及ExtensionLoader部分进行说明，ExtensionLoader类其余部分不会展开。
+阅读此文的前提是对Dubbo SPI以及Dubbo的ExtensionLoader类有所了解。@Adaptive是辅助ExtentionLoader使用的一部分。
 
 ### 几个问题
-* 1.@Adaptive修饰class与method有什么区别？
-* 2.针对一个Dubbo SPI接口，使用@Adaptive修饰两个及以上实现类时，调用ExtensionLoader.getAdaptiveExtension会发生什么？
-* 3.@Adaptive是为了解决什么问题而生？解决此问题的思路是什么？
+带着下面几个问题去学习@Adaptive：
+* 1.@Adaptive注解有什么作用，适用于什么场景，实现的原理是怎样？
+* 2.@Adaptive修饰class与method有什么区别？
+* 3.针对一个Dubbo SPI接口，使用@Adaptive修饰两个及以上实现类时，调用ExtensionLoader.getAdaptiveExtension会发生什么？
 
 ## 1.@Adaptive概览
 ```java
@@ -21,14 +22,14 @@ public @interface Adaptive {
     String[] value() default {};
 }
 ```
-从源码以及源码注释中可以得出以下几点：  
+从Adaptive注解定义及源码注释中可以得出以下几点：  
 * Adaptive是一个注解，可以修饰类（接口，枚举）和方法
 * 此注解的作用是为ExtensionLoader注入扩展实例提供有用的信息
   
 从注释中理解value的作用：  
-* 1.value可以决定选择使用具体的扩展类。
+* 1.配置value用于决定选择使用具体的扩展类，默认为空string数组。
 * 2.通过value配置的值key，在修饰的方法的入参org.apache.dubbo.common.URL中通过key获取到对应的值value，根据value作为extensionName去决定使用对应的扩展类。
-* 3.如果通过2没有找到对应的扩展，会选择默认的扩展类,通过@SPI配置默认扩展类
+* 3.如果通过2没有找到对应的扩展（extName->ExtensionClass），会选择默认的扩展类，即@SPI配置默认扩展类
 
 > tips：为什么要从方法的入参org.apache.dubbo.common.URL获取值？
 
@@ -44,12 +45,12 @@ public interface SimpleExt {
     String yell(URL url, String s);
 }
 ```
-如果调用ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension().yell(url, s)方法，最终调用哪一个扩展类名的流程，  
+如果调用ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension().yell(url, s)方法，最终调用哪一个扩展类实例的流程为：    
 首先，通过url.getParameters.get("key1")获取，没有获取到则用url.getParameters.get("key2"),如果还是没有获取到则使用impl1对应的实现类，最后还是没有获取到则抛异常IllegalStateException。
   
 可以看出，@Adaptive的好处就是可以通过方法入参决定具体调用哪一个实现类。下面会对@Adaptive的具体实现进行详细分析。
   
-## 2.初览
+## 2.实现流程
 获取自适应扩展类的使用方法，通常使用ExtensionLoader.getExtensionLoader(Xxxx.class).getAdaptiveExtension()来获取Adaptive实例，如下，引用自ServiceConfig获取PROTOCOL的方式。
 > private static final Protocol PROTOCOL = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
