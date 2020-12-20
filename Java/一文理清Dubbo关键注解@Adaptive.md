@@ -1,5 +1,5 @@
 # 一文理清Dubbo关键注解@Adaptive
-[TOC]
+[toc]
 ## 0.前言
 ### 说明
 本文Dubbo源码版本为2.7.8-release。
@@ -55,7 +55,8 @@ public interface SimpleExt {
 > private static final Protocol PROTOCOL = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
 ### 获取Adaptive实例的流程
-<流程图>
+
+![@Adaptive流程](../resources/img/adaptive.png)
 
 流程关键点说明：  
 1.上图中黄色标记的，cachedAdaptiveClass是在ExtensionLoader#loadClass方法中加载Extension类时缓存的。  
@@ -241,4 +242,9 @@ public class SimpleExt$Adaptive implements org.apache.dubbo.common.extension.ext
 ```
 
 ## 4.总结
-Dubbo SPI的自适应扩展(Adaptive)实现，实现了调用Adaptive方法时通过入参来选择具体的扩展实现来进行调用。理解Adaptive对阅读Dubbo源码有很大的帮助。
+总结：  
+* @Adaptive注解可以修饰Dubbo SPI接口的实现类或SPI接口的方法。
+* @Adaptive注解可通过修饰类或方法来实现自适应调用SPI接口扩展类实例的实现。
+* 针对同一个SPI接口，使用@Adaptive修饰两个及以上实现类时，调用ExtensionLoader.getAdaptiveExtension只会有一个生效（按特定排序规则，具体可在源码中查看），因此要避免这种情况。
+  
+@Adaptive注解是Dubbo SPI自适应选择扩展类实例调用的实现方式。@Adaptive修饰SPI接口的方法时，可通过具体入参来选择具体的扩展实现来进行调用，达到一种参数自适应调用的效果。理解Adaptive对阅读Dubbo源码有很大的帮助。
