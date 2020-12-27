@@ -1,9 +1,5 @@
 # Java线程中断机制
 
-<优雅停止>
-
-
-
 ## Java里线程中断方法
 
 在Thread类里与中断有关的`public`的方法有如下三个：
@@ -38,4 +34,16 @@ public class Thread implements Runnable {
 ```
 通过上面的代码可以很明确的得知，interrupted方法用于获取当前线程的线程标志位，且将标志位归为原始值false。
   
-## InterruptException
+## 中断线程
+线程的生命周期包括初始化、就绪、运行、阻塞、终止。  
+使用interrupt中断线程，可以作用于运行状态和阻塞状态的线程。
+每个线程都有一个boolean类型的中断标志位。
+
+### 运行状态
+调用线程的interrupt方法会将此线程的中断标志位置为true。
+此时如果线程处于运行状态时，可以通过isInterrupted()来检测中断标志位来决定怎么处理。
+
+### 阻塞状态
+调用线程的interrupt方法会将此线程的中断标志位置为true。
+此时如果线程处于运行状态时，会将中断标志位重置为false，然后抛出InterruptedException异常。
+
