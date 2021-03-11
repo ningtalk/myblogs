@@ -31,7 +31,7 @@ public ThreadPoolExecutor(int corePoolSize,
 ### 合适的线程数
 首先，肯定不是越多越好，线程的创建、切换、销毁的开销都比较大，过多的线程可能会有性能问题。当创建线程池时需要确定线程池的核心线程数，多
 少最合适？从网上查看资料得到对于IO密集型的应用（大部分实践应用）线程的个数可参考 `最佳线程数 =CPU 核数 * [ 1 +（I/O 耗时 / CPU 耗时）]`，当然具体设置多少合适，通过压测数据来决定是最准确的。  
-
+在实际使用中，经常会使用int coreNum = Runtime.getRuntime().availableProcessors()作为CPU的核数来设置线程数量，比如设置核心线程数为coreNum + 1，最大线程数为coreNum * 2等。需要注意的是现在很多应用部署容器化，通过Runtime.getRuntime().availableProcessors()获取的可能是物理机的CPU数量。
 
 ## 源码分析
 参考https://www.cnblogs.com/sanzao/p/10712778.html
